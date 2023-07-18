@@ -6,7 +6,7 @@ var map = new mapboxgl.Map({
   container: "map",
   style: "mapbox://styles/jgf94/ckg7ai9oo06zj19p6zw741oe2",
   center: [-73.9867, 40.6845],
-  zoom: 20,
+  zoom: 15,
   pitch: 15,
   bearing: 0,
   antialias: true,
@@ -41,27 +41,30 @@ var buildingFilter = ["in", "bin"];
 var treeColor = "color";
 var shadowColor = "color";
 
-fetch("./data/tile987187buildings.geojson")
+// fetch("./data/tile987187buildings.geojson")
+//   .then((response) => response.json())
+//   .then((data) => (buildings = data));
+
+var boroughBoundaries;
+fetch("./data/building_foot_prints/borough_boundaries.geojson")
   .then((response) => response.json())
-  .then((data) => (buildings = data));
-
-map.on("load", function () {
-  updateDayHourBar();
-  map.removeLayer("building");
-
-  map.addSource("trees", {
-    type: "geojson",
-    data: "./data/tile987187.geojson",
+  .then((data) => {
+    boroughBoundaries = data;
   });
 
-  map.addSource("treespoly", {
-    type: "geojson",
-    data: "./data/tile987187polygon.geojson",
-  });
+const loadBuildingData = (borough) => {
 
+  // load building data
+  fetch(
+    `./data/building_foot_prints/packed_TF_${borough}_buildings_footprint.geojson`
+  )
+    .then((response) => response.json())
+    .then((data) => (buildings = data));
+
+  // load mapRecource and map layer
   map.addSource("buildings", {
     type: "geojson",
-    data: "./data/tile987187buildings.geojson",
+    data: `./data/building_foot_prints/packed_TF_${borough}_buildings_footprint.geojson`,
   });
 
   map.addLayer({
@@ -77,7 +80,6 @@ map.on("load", function () {
       "fill-extrusion-opacity": 0.5,
     },
   });
-
   map.addLayer({
     id: "buildingfootprints",
     source: "buildings",
@@ -88,43 +90,308 @@ map.on("load", function () {
       "fill-opacity": 0.1,
     },
   });
+};
 
-  map.addLayer({
-    id: "trees1",
-    type: "circle",
-    source: "trees",
-    layout: { visibility: "visible" },
-    paint: {
-      // make circles larger as the user zooms from z12 to z22
-      "circle-radius": {
-        base: 1,
-        stops: [
-          [15, 1.5],
-          [17, 3],
-          [22, 24],
-        ],
+const freeBuildingData = () => {
+  buildings = {};
+
+  map.removeLayer("buildingExtruded");
+  map.removeLayer("buildingfootprints");
+  map.removeSource("buildings");
+
+  // remove all buildings and building shadows
+  for (var building of selectedBuildings) {
+    var buildingBin = building.properties.bin;
+    var buildingSourceName = `building${buildingBin}ShadowSourceEast`;
+    var buildingLayerName = `building${buildingBin}ShadowLayerEast`;
+
+    if (map.getLayer(buildingLayerName)) {
+      map.removeLayer(buildingLayerName);
+    }
+
+    if (map.getSource(buildingSourceName)) {
+      map.removeSource(buildingSourceName);
+    }
+  }
+  selectedBuildings = [];
+  selectedBins = [];
+};
+
+// const boroughs = ['bronx', 'brooklyn', 'manhattan', 'queens', 'staten'];
+const boroughs = [
+  { name: 'bronx', color: 'rgba(200,100,50,0.8)' },
+  { name: 'brooklyn', color: 'rgba(50,200,75,1)' },
+  { name: 'manhattan', color: 'rgba(100,50,200,0.8)' },
+  { name: 'queens', color: 'rgba(50,100,200,1)' },
+  { name: 'staten', color: 'rgba(200,50,100,0.8)' },
+];
+
+map.on("load", function () {
+  updateDayHourBar();
+  map.removeLayer("building");
+
+  map.addSource("trees", {
+    type: "geojson",
+    data: "./data/tile987187.geojson",
+  });
+
+  map.addSource("treespoly", {
+    type: "geojson",
+    data: "./data/tile987187polygon.geojson",
+  });
+
+  // map.addSource("buildings", {
+  //   type: "geojson",
+  //   data: "./data/tile987187buildings.geojson",
+  // });
+
+
+  // map.addLayer({
+  //   id: "buildingExtruded",
+  //   source: "buildings",
+  //   filter: ["in", "bin", ""],
+  //   layout: { visibility: "visible" },
+  //   type: "fill-extrusion",
+  //   minzoom: 15,
+  //   paint: {
+  //     "fill-extrusion-color": "rgb(225,220,215)",
+  //     "fill-extrusion-height": ["/", ["get", "heightroof"], 3.28],
+  //     "fill-extrusion-opacity": 0.5,
+  //   },
+  // });
+
+  // map.addLayer({
+  //   id: "buildingfootprints",
+  //   source: "buildings",
+  //   layout: { visibility: "visible" },
+  //   type: "fill",
+  //   minzoom: 15,
+  //   paint: {
+  //     "fill-color": "#808080",
+  //     "fill-opacity": 0.1,
+  //   },
+  // });
+
+  // map.addLayer({
+  //   id: "trees1",
+  //   type: "circle",
+  //   minzoom: 15,
+  //   source: "trees",
+  //   layout: { visibility: "visible" },
+  //   paint: {
+  //     // make circles larger as the user zooms from z12 to z22
+  //     "circle-radius": {
+  //       base: 1,
+  //       stops: [
+  //         [15, 1.5],
+  //         [17, 3],
+  //         [22, 24],
+  //       ],
+  //     },
+  //     "circle-pitch-alignment": "map",
+  //     "circle-color": "rgba(255,255,255,0)",
+  //     "circle-stroke-color": [
+  //       "interpolate",
+  //       ["linear"],
+  //       ["get", "zrange"],
+  //       0,
+  //       "rgba(200,100,50,0.8)",
+  //       65,
+  //       "rgba(50,200,75,1)",
+  //     ],
+  //     "circle-stroke-width": {
+  //       base: 1,
+  //       stops: [
+  //         [15, 0.7],
+  //         [17, 1],
+  //         [22, 5],
+  //       ],
+  //     },
+  //     "circle-opacity": 1,
+  //   },
+  // });
+
+  boroughs.forEach((borough) => {
+    map.addSource(borough.name, {
+      type: "geojson",
+      data: `./data/geojson/${borough.name}.geojson`,
+    });
+
+    // Add a layer for each borough
+    map.addLayer({
+      id: `${borough.name}Trees`,
+      type: "circle",
+      minzoom: 15,
+      source: borough.name,
+      layout: { visibility: "visible" },
+      paint: {
+        // make circles larger as the user zooms from z12 to z22
+        "circle-radius": {
+          base: 1,
+          stops: [
+            [15, 1.5],
+            [17, 3],
+            [22, 24],
+          ],
+        },
+        "circle-pitch-alignment": "map",
+        "circle-color": "rgba(255,255,255,0)",
+        "circle-stroke-color": borough.color,
+        // "circle-stroke-color": [
+        //   "interpolate",
+        //   ["linear"],
+        //   ["get", "zrange"],
+        //   0,
+        //   "rgba(200,100,50,0.8)",
+        //   65,
+        //   "rgba(50,200,75,1)",
+        // ],
+        "circle-stroke-width": {
+          base: 1,
+          stops: [
+            [15, 0.7],
+            [17, 1],
+            [22, 5],
+          ],
+        },
+        "circle-opacity": 1,
       },
-      "circle-pitch-alignment": "map",
-      "circle-color": "rgba(255,255,255,0)",
-      "circle-stroke-color": [
-        "interpolate",
-        ["linear"],
-        ["get", "zrange"],
-        0,
-        "rgba(200,100,50,0.8)",
-        65,
-        "rgba(50,200,75,1)",
-      ],
-      "circle-stroke-width": {
-        base: 1,
-        stops: [
-          [15, 0.7],
-          [17, 1],
-          [22, 5],
-        ],
-      },
-      "circle-opacity": 1,
-    },
+    });
+
+    map.on("click", `${borough.name}Trees`, function (e) {
+      var treeID = e.features[0].properties["tree_id"];
+
+      lat = e.features[0].properties["Latitude"];
+      lon = e.features[0].properties["longitude"];
+
+      var pointCloudId = `tree${treeID}`;
+      var pointCloudFile = `https://s3.amazonaws.com/www.treefolio.org-2.0/data/treeJsonFiles/2021/${treeID}.json`;
+
+      console.log(`pCloudFilelink:${pointCloudFile}`)
+      if (map.getLayer(pointCloudId)) {
+        return;
+      }
+
+      map.addLayer(
+        new MapboxLayer({
+          id: pointCloudId,
+          type: PointCloudLayer,
+          data: pointCloudFile,
+          getPosition: (d) => [d[1], d[0], d[2]],
+          getColor: (d) => borough.color,
+          sizeUnits: "feet",
+          pointSize: 3,
+          opacity: 0.8,
+          visible: true,
+        })
+      );
+
+      let day = parseFloat(document.getElementById("dayslider").value);
+      let hour = parseFloat(document.getElementById("hourslider").value);
+      console.log(`day:${day}, hour:${hour}`);
+
+      date = new Date("2022-01-01 00:00");
+      console.log(`date:${date}`);
+      date.setDate(date.getDate() + day);
+      console.log(`day + date:${date}`);
+      var offset = date.getTimezoneOffset();
+      console.log(`offset:${offset}`);
+      date.setTime(date.getTime() + hour * 60 * 60 * 1000 + offset * 60 * 1000);
+      console.log(`date + hour:${date}`);
+
+      // updateUI(e);
+      selectedTreeIds.push(treeID);
+      shadow(date, (e) => {
+        // console.log("shadow: plant new tree");
+      });
+      stretchHoursBar();
+    });
+
+    map.on("mouseenter", `${borough.name}Trees`, (e) => {
+      // Change the cursor style as a UI indicator.
+      map.getCanvas().style.cursor = "pointer";
+
+      // Copy coordinates array.
+      const coordinates = e.features[0].geometry.coordinates.slice();
+      const tree_id = e.features[0].properties.tree_id;
+      const spc_common = e.features[0].properties.spc_common;
+      const spc_latin = e.features[0].properties.spc_latin;
+      const address = e.features[0].properties.address;
+      const status = e.features[0].properties.status;
+      const health = e.features[0].properties.health;
+      const truckDiameter = e.features[0].properties.tree_dbh;
+      const canopyRadius = e.features[0].properties.canopy_radius_calc_ft;
+      const height = e.features[0].properties.zrange;
+      const density = e.features[0].properties.density;
+
+      if (shadedPoints[tree_id] == undefined) {
+        shadedPoints[tree_id] = [];
+      }
+      if (shadingPoints[tree_id] == undefined) {
+        shadingPoints[tree_id] = [];
+      }
+      if (otherPoints[tree_id] == undefined) {
+        otherPoints[tree_id] = [];
+      }
+      const totalPoint =
+        shadedPoints[tree_id].length +
+        shadingPoints[tree_id].length +
+        otherPoints[tree_id].length;
+      let shadedPointPercentage =
+        (shadedPoints[tree_id].length / totalPoint) * 100;
+      shadedPointPercentage = shadedPointPercentage.toFixed(2) + "%";
+      let shadingPointPercentage =
+        (shadingPoints[tree_id].length / totalPoint) * 100;
+      shadingPointPercentage = shadingPointPercentage.toFixed(2) + "%";
+      let otherPointPercentage = (otherPoints[tree_id].length / totalPoint) * 100;
+      otherPointPercentage = otherPointPercentage.toFixed(2) + "%";
+
+      // Ensure that if the map is zoomed out such that multiple
+      // copies of the feature are visible, the popup appears
+      // over the copy being pointed to.
+      while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+        coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+      }
+
+      // Populate the popup and set its coordinates
+      // based on the feature found.
+      let description = `
+      <div class="popup-species">
+          <h3 class="spc_common">${spc_common}</h3>
+          <h5 class="spc_latin">${spc_latin}</h5>
+        </div>
+        <div class="popup-details">
+          <p><strong>Address:</strong> ${address}</p>
+          <p><strong>Status:</strong> ${status}</p>
+          <p><strong>Health:</strong> ${health}</p>
+          <p><strong>Truck Diameter:</strong> ${truckDiameter}</p>
+          <p><strong>Canopy Radius:</strong> ${canopyRadius}</p>
+          <p><strong>Height:</strong> ${height}</p>
+          <p><strong>Density:</strong> ${density}</p>
+          <p><strong>Shaded Percent:</strong> <span class="shaded-percent">${shadedPointPercentage}</span></p>
+          <p><strong>Shading Percent:</strong> <span class="shading-percent">${shadingPointPercentage}</span></p>
+          <p><strong>Other Percent:</strong> <span class="other-percent">${otherPointPercentage}</span></p>
+        </div>
+      `;
+      document.getElementById("board").style.display = "none";
+      popup.setLngLat(coordinates).setHTML(description).addTo(map);
+    });
+
+    map.on("mouseleave", `${borough.name}Trees`, () => {
+      map.getCanvas().style.cursor = "";
+      popup.remove();
+      document.getElementById("board").style.display = "block";
+    });
+
+    //
+
+    map.on("mouseenter", `${borough.name}Trees`, function (e) {
+      map.getCanvas().style.cursor = "pointer";
+    });
+    map.on("mouseleave", `${borough.name}Trees`, function () {
+      map.getCanvas().style.cursor = "";
+    });
+
   });
 
   const popup = new mapboxgl.Popup({
@@ -132,90 +399,175 @@ map.on("load", function () {
     closeOnClick: false,
   });
 
-  map.on("mouseenter", "trees1", (e) => {
-    // Change the cursor style as a UI indicator.
-    map.getCanvas().style.cursor = "pointer";
+  // Set the target zoom levels
+  const targetZoomLevelIn = 13;
+  const targetZoomLevelOut = 11;
 
-    // Copy coordinates array.
-    const coordinates = e.features[0].geometry.coordinates.slice();
-    const tree_id = e.features[0].properties.tree_id;
-    const spc_common = e.features[0].properties.spc_common;
-    const spc_latin = e.features[0].properties.spc_latin;
-    const address = e.features[0].properties.address;
-    const status = e.features[0].properties.status;
-    const health = e.features[0].properties.health;
-    const truckDiameter = e.features[0].properties.tree_dbh;
-    const canopyRadius = e.features[0].properties.canopy_radius_calc_ft;
-    const height = e.features[0].properties.zrange;
-    const density = e.features[0].properties.density;
+  // Flags to track if the target zoom levels have been reached
+  let targetZoomInReached = false;
+  let targetZoomOutReached = true;
 
-    if (shadedPoints[tree_id] == undefined) {
-      shadedPoints[tree_id] = [];
-    }
-    if (shadingPoints[tree_id] == undefined) {
-      shadingPoints[tree_id] = [];
-    }
-    if (otherPoints[tree_id] == undefined) {
-      otherPoints[tree_id] = [];
-    }
-    const totalPoint =
-      shadedPoints[tree_id].length +
-      shadingPoints[tree_id].length +
-      otherPoints[tree_id].length;
-    let shadedPointPercentage =
-      (shadedPoints[tree_id].length / totalPoint) * 100;
-    shadedPointPercentage = shadedPointPercentage.toFixed(2) + "%";
-    let shadingPointPercentage =
-      (shadingPoints[tree_id].length / totalPoint) * 100;
-    shadingPointPercentage = shadingPointPercentage.toFixed(2) + "%";
-    let otherPointPercentage = (otherPoints[tree_id].length / totalPoint) * 100;
-    otherPointPercentage = otherPointPercentage.toFixed(2) + "%";
+  // Function to execute when the target zoom level for zooming in is reached
+  function onTargetZoomInReached() {
+    const center = map.getCenter();
+    const centerPoint = turf.point([center.lng, center.lat]);
+    let currentBorough;
 
-    // Ensure that if the map is zoomed out such that multiple
-    // copies of the feature are visible, the popup appears
-    // over the copy being pointed to.
-    while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-      coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+    boroughBoundaries.features.some((feature) => {
+      const coordinates = feature.geometry.coordinates;
+
+      if (feature.geometry.type === "Polygon") {
+        const boroughPolygon = turf.polygon(coordinates);
+        if (turf.booleanPointInPolygon(centerPoint, boroughPolygon)) {
+          currentBorough = feature.properties.boro_name;
+          return true;
+        }
+      } else if (feature.geometry.type === "MultiPolygon") {
+        return coordinates.some((polygonCoords) => {
+          const boroughPolygon = turf.polygon(polygonCoords);
+          if (turf.booleanPointInPolygon(centerPoint, boroughPolygon)) {
+            currentBorough = feature.properties.boro_name;
+            return true;
+          }
+          return false;
+        });
+      }
+      return false;
+    });
+    const boroughMap = {
+      "Staten Island": "SI",
+      Manhattan: "MN",
+      Brooklyn: "BK",
+      Queens: "QN",
+      Bronx: "BX",
+    };
+    if (currentBorough) {
+      console.log(
+        `Target zoom level in (${targetZoomLevelIn}) reached.`,
+        "Borough:",
+        currentBorough
+      );
+      loadBuildingData(boroughMap[currentBorough]);
+    } else {
+      console.log(
+        `Target zoom level in (${targetZoomLevelIn}) reached. Current viewing location:`,
+        center,
+        "Borough: Outside NYC boroughs"
+      );
+    }
+  }
+
+  // Function to execute when the target zoom level for zooming out is reached
+  function onTargetZoomOutReached() {
+    console.log(`Target zoom level out (${targetZoomLevelOut}) reached.`);
+    freeBuildingData();
+  }
+
+  // Add a 'zoomend' event listener
+  map.on("zoomend", () => {
+    const currentZoomLevel = map.getZoom();
+
+    // Check for zooming in
+    if (currentZoomLevel >= targetZoomLevelIn && !targetZoomInReached) {
+      onTargetZoomInReached();
+      targetZoomInReached = true;
+    } else if (currentZoomLevel < targetZoomLevelIn) {
+      targetZoomInReached = false;
     }
 
-    // Populate the popup and set its coordinates
-    // based on the feature found.
-    let description = `
-    <div class="popup-species">
-        <h3 class="spc_common">${spc_common}</h3>
-        <h5 class="spc_latin">${spc_latin}</h5>
-      </div>
-      <div class="popup-details">
-        <p><strong>Address:</strong> ${address}</p>
-        <p><strong>Status:</strong> ${status}</p>
-        <p><strong>Health:</strong> ${health}</p>
-        <p><strong>Truck Diameter:</strong> ${truckDiameter}</p>
-        <p><strong>Canopy Radius:</strong> ${canopyRadius}</p>
-        <p><strong>Height:</strong> ${height}</p>
-        <p><strong>Density:</strong> ${density}</p>
-        <p><strong>Shaded Percent:</strong> <span class="shaded-percent">${shadedPointPercentage}</span></p>
-        <p><strong>Shading Percent:</strong> <span class="shading-percent">${shadingPointPercentage}</span></p>
-        <p><strong>Other Percent:</strong> <span class="other-percent">${otherPointPercentage}</span></p>
-      </div>
-    `;
-    document.getElementById("board").style.display = "none";
-    popup.setLngLat(coordinates).setHTML(description).addTo(map);
+    // Check for zooming out
+    if (currentZoomLevel <= targetZoomLevelOut && !targetZoomOutReached) {
+      onTargetZoomOutReached();
+      targetZoomOutReached = true;
+    } else if (currentZoomLevel > targetZoomLevelOut) {
+      targetZoomOutReached = false;
+    }
   });
 
-  map.on("mouseleave", "trees1", () => {
-    map.getCanvas().style.cursor = "";
-    popup.remove();
-    document.getElementById("board").style.display = "block";
-  });
+  // map.on("mouseenter", "trees1", (e) => {
+  //   // Change the cursor style as a UI indicator.
+  //   map.getCanvas().style.cursor = "pointer";
+
+  //   // Copy coordinates array.
+  //   const coordinates = e.features[0].geometry.coordinates.slice();
+  //   const tree_id = e.features[0].properties.tree_id;
+  //   const spc_common = e.features[0].properties.spc_common;
+  //   const spc_latin = e.features[0].properties.spc_latin;
+  //   const address = e.features[0].properties.address;
+  //   const status = e.features[0].properties.status;
+  //   const health = e.features[0].properties.health;
+  //   const truckDiameter = e.features[0].properties.tree_dbh;
+  //   const canopyRadius = e.features[0].properties.canopy_radius_calc_ft;
+  //   const height = e.features[0].properties.zrange;
+  //   const density = e.features[0].properties.density;
+
+  //   if (shadedPoints[tree_id] == undefined) {
+  //     shadedPoints[tree_id] = [];
+  //   }
+  //   if (shadingPoints[tree_id] == undefined) {
+  //     shadingPoints[tree_id] = [];
+  //   }
+  //   if (otherPoints[tree_id] == undefined) {
+  //     otherPoints[tree_id] = [];
+  //   }
+  //   const totalPoint =
+  //     shadedPoints[tree_id].length +
+  //     shadingPoints[tree_id].length +
+  //     otherPoints[tree_id].length;
+  //   let shadedPointPercentage =
+  //     (shadedPoints[tree_id].length / totalPoint) * 100;
+  //   shadedPointPercentage = shadedPointPercentage.toFixed(2) + "%";
+  //   let shadingPointPercentage =
+  //     (shadingPoints[tree_id].length / totalPoint) * 100;
+  //   shadingPointPercentage = shadingPointPercentage.toFixed(2) + "%";
+  //   let otherPointPercentage = (otherPoints[tree_id].length / totalPoint) * 100;
+  //   otherPointPercentage = otherPointPercentage.toFixed(2) + "%";
+
+  //   // Ensure that if the map is zoomed out such that multiple
+  //   // copies of the feature are visible, the popup appears
+  //   // over the copy being pointed to.
+  //   while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+  //     coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+  //   }
+
+  //   // Populate the popup and set its coordinates
+  //   // based on the feature found.
+  //   let description = `
+  //   <div class="popup-species">
+  //       <h3 class="spc_common">${spc_common}</h3>
+  //       <h5 class="spc_latin">${spc_latin}</h5>
+  //     </div>
+  //     <div class="popup-details">
+  //       <p><strong>Address:</strong> ${address}</p>
+  //       <p><strong>Status:</strong> ${status}</p>
+  //       <p><strong>Health:</strong> ${health}</p>
+  //       <p><strong>Truck Diameter:</strong> ${truckDiameter}</p>
+  //       <p><strong>Canopy Radius:</strong> ${canopyRadius}</p>
+  //       <p><strong>Height:</strong> ${height}</p>
+  //       <p><strong>Density:</strong> ${density}</p>
+  //       <p><strong>Shaded Percent:</strong> <span class="shaded-percent">${shadedPointPercentage}</span></p>
+  //       <p><strong>Shading Percent:</strong> <span class="shading-percent">${shadingPointPercentage}</span></p>
+  //       <p><strong>Other Percent:</strong> <span class="other-percent">${otherPointPercentage}</span></p>
+  //     </div>
+  //   `;
+  //   document.getElementById("board").style.display = "none";
+  //   popup.setLngLat(coordinates).setHTML(description).addTo(map);
+  // });
+
+  // map.on("mouseleave", "trees1", () => {
+  //   map.getCanvas().style.cursor = "";
+  //   popup.remove();
+  //   document.getElementById("board").style.display = "block";
+  // });
 
   //
 
-  map.on("mouseenter", "trees1", function (e) {
-    map.getCanvas().style.cursor = "pointer";
-  });
-  map.on("mouseleave", "trees1", function () {
-    map.getCanvas().style.cursor = "";
-  });
+  // map.on("mouseenter", "trees1", function (e) {
+  //   map.getCanvas().style.cursor = "pointer";
+  // });
+  // map.on("mouseleave", "trees1", function () {
+  //   map.getCanvas().style.cursor = "";
+  // });
   map.on("mouseenter", "buildingfootprints", function (e) {
     map.getCanvas().style.cursor = "pointer";
   });
@@ -303,15 +655,25 @@ map.on("load", function () {
   function updateDayHourBar() {
     let day = parseFloat(document.getElementById("dayslider").value);
     let hour = parseFloat(document.getElementById("hourslider").value);
+    console.log(`day:${day}, hour:${hour}`);
+    // date = new Date("2022-01-01 00:00");
+    // date.setDate(date.getDate() + day);
+    // var offset = date.getTimezoneOffset();
+    // date.setTime(date.getTime() + hour * 60 * 60 * 1000 + offset * 60 * 1000);
+
     date = new Date("2022-01-01 00:00");
+    console.log(`date:${date}`);
     date.setDate(date.getDate() + day);
+    console.log(`day + date:${date}`);
     var offset = date.getTimezoneOffset();
+    console.log(`offset:${offset}`);
     date.setTime(date.getTime() + hour * 60 * 60 * 1000 + offset * 60 * 1000);
-    let dateString = date.toString().split(" ");
-    day = `${dateString[1]} ${dateString[2]}`;
-    hour = `${dateString[4].split(":")[0]}:00 EST`;
-    document.getElementById("day").innerHTML = day;
-    document.getElementById("hour").innerHTML = hour;
+    console.log(`date + hour:${date}`);
+    // let dateString = date.toString().split(" ");
+    // day = `${dateString[1]} ${dateString[2]}`;
+    // hour = `${dateString[4].split(":")[0]}:00 EST`;
+    // document.getElementById("day").innerHTML = day;
+    // document.getElementById("hour").innerHTML = hour;
   }
 
   map.on("click", "buildingfootprints", function (e) {
@@ -320,20 +682,30 @@ map.on("load", function () {
 
     map.setFilter("buildingExtruded", ["in", "bin", ...selectedBins]);
 
+    // function buildingShadowUpdate(buildings) {
+    //   for (let i = 0; i < buildings.features.length; i++) {
+    //     if (buildings.features[i].properties.bin == bin) {
+    //       var building = buildings.features[i];
+    //       selectedBuildings.push(building);
+    //     } else {
+    //     }
+    //   }
+    // }
     function buildingShadowUpdate(buildings) {
-      for (let i = 0; i < buildings.features.length; i++) {
-        if (buildings.features[i].properties.bin == bin) {
-          var building = buildings.features[i];
+      buildings.features.forEach((building) => {
+        if (building.properties.bin === bin) {
           selectedBuildings.push(building);
-        } else {
+
         }
-      }
+      });
     }
+
     buildingShadowUpdate(buildings);
   });
 
   document.getElementById("dayslider").addEventListener("input", function (h) {
     updateDayHourBar();
+    // date = new Date("2022-03-22 02:01:12");
     shadow(date, (e) => {
       // console.log("shadow: stretch days bar");
     });
@@ -379,6 +751,11 @@ function getBuildingShadow(building) {
   }
   var hullPoints = makeHull(buildingPointsGround);
   hulls.push(hullPoints);
+  console.log("BuildingShadow :")
+  console.log("buildingPointsGround :")
+  console.log(buildingPointsGround)
+  console.log("hullPoints :")
+  console.log(hullPoints)
 
   map.addSource(buildingSourceName, {
     type: "geojson",
@@ -405,12 +782,27 @@ function getBuildingShadow(building) {
 }
 
 function shadow(date, callback) {
+  console.log("getPosition: ");
+  console.log(date);
+  console.log(lat);
+  console.log(lon);
   var sunPosition = SunCalc.getPosition(date, lat, lon);
   var az = (sunPosition["azimuth"] * 180) / Math.PI;
   var amp = (sunPosition["altitude"] * 180) / Math.PI;
-
+  console.log("shadow: start");
+  console.log("sunPosition:")
+  console.log(sunPosition)
+  console.log("az:")
+  console.log(az)
+  console.log("amp:")
+  console.log(amp)
   var az = parseFloat(az);
   var amp = parseFloat(amp);
+  console.log("--------")
+  console.log("az:")
+  console.log(az)
+  console.log("amp:")
+  console.log(amp)
 
   sinAz = Math.sin((az * Math.PI) / 180);
   cosAz = Math.cos((az * Math.PI) / 180);
@@ -418,6 +810,18 @@ function shadow(date, callback) {
   sinAmp = Math.sin(((amp - 90) * Math.PI) / 180);
   cosAmp = Math.cos(((amp - 90) * Math.PI) / 180);
   tanAmp = Math.tan((-amp * Math.PI) / 180);
+  console.log("sinAz:")
+  console.log(sinAz)
+  console.log("cosAz:")
+  console.log(cosAz)
+  console.log("tanAz:")
+  console.log(tanAz)
+  console.log("sinAmp:")
+  console.log(sinAmp)
+  console.log("cosAmp:")
+  console.log(cosAmp)
+  console.log("tanAmp:")
+  console.log(tanAmp)
 
   shadedPoints = {};
   shadingPoints = {};
@@ -435,7 +839,7 @@ function shadow(date, callback) {
   // console.log(`From shadow func current selected trees: ${selectedTreeIds}`);
   for (const tree_id of selectedTreeIds) {
     var pointCloudId = `tree${tree_id}`;
-    var pointCloudFile = `data/pointCloudJSONs_ver2021/${tree_id}.json`;
+    var pointCloudFile = `https://s3.amazonaws.com/www.treefolio.org-2.0/data/treeJsonFiles/2021/${tree_id}.json`;
     // console.log(pointCloudFile);
     var shadowId = `shadow${tree_id}`;
 
