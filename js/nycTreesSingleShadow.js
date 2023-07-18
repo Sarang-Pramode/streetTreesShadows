@@ -214,7 +214,7 @@ map.on("load", function () {
   boroughs.forEach((borough) => {
     map.addSource(borough.name, {
       type: "geojson",
-      data: `./data/geojson/${borough.name}.geojson`,
+      data: `./data/treeGeoJson/${borough.name}.geojson`,
     });
 
     // Add a layer for each borough
