@@ -1,4 +1,4 @@
-mapboxgl.accessToken =
+v2mapboxgl.accessToken =
   "pk.eyJ1IjoiamdmOTQiLCJhIjoiY2thaXk2bjQzMDZvYzJ3cXoxeThnODU5NyJ9.o1ijddB0igPdlsWMw6iRVw";
 const { MapboxLayer, PointCloudLayer } = deck;
 
@@ -12,7 +12,7 @@ var map = new mapboxgl.Map({
   antialias: true,
 });
 
-//small change to test codeDeploy
+//small change to test codeDeploy 2
 
 /////////////
 
