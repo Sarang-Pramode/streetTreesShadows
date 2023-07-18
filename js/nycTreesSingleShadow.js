@@ -12,6 +12,8 @@ var map = new mapboxgl.Map({
   antialias: true,
 });
 
+//small change
+
 /////////////
 
 var lat;
