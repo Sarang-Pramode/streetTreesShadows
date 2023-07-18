@@ -12,7 +12,7 @@ var map = new mapboxgl.Map({
   antialias: true,
 });
 
-//small change
+//small change to test codeDeploy
 
 /////////////
 
