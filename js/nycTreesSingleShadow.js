@@ -1,4 +1,4 @@
-v2mapboxgl.accessToken =
+mapboxgl.accessToken =
   "pk.eyJ1IjoiamdmOTQiLCJhIjoiY2thaXk2bjQzMDZvYzJ3cXoxeThnODU5NyJ9.o1ijddB0igPdlsWMw6iRVw";
 const { MapboxLayer, PointCloudLayer } = deck;
 
@@ -6,13 +6,11 @@ var map = new mapboxgl.Map({
   container: "map",
   style: "mapbox://styles/jgf94/ckg7ai9oo06zj19p6zw741oe2",
   center: [-73.9867, 40.6845],
-  zoom: 15,
+  zoom: 10,
   pitch: 15,
   bearing: 0,
   antialias: true,
 });
-
-//small change to test codeDeploy 2
 
 /////////////
 
@@ -42,10 +40,6 @@ var buildingFilter = ["in", "bin"];
 
 var treeColor = "color";
 var shadowColor = "color";
-
-// fetch("./data/tile987187buildings.geojson")
-//   .then((response) => response.json())
-//   .then((data) => (buildings = data));
 
 var boroughBoundaries;
 fetch("./data/building_foot_prints/borough_boundaries.geojson")
@@ -87,6 +81,7 @@ const loadBuildingData = (borough) => {
     source: "buildings",
     layout: { visibility: "visible" },
     type: "fill",
+    minzoom: 15,
     paint: {
       "fill-color": "#808080",
       "fill-opacity": 0.1,
@@ -100,6 +95,7 @@ const freeBuildingData = () => {
   map.removeLayer("buildingExtruded");
   map.removeLayer("buildingfootprints");
   map.removeSource("buildings");
+  console.log("free building data success !!!");
 
   // remove all buildings and building shadows
   for (var building of selectedBuildings) {
@@ -216,7 +212,7 @@ map.on("load", function () {
   boroughs.forEach((borough) => {
     map.addSource(borough.name, {
       type: "geojson",
-      data: `./data/treeGeoJson/${borough.name}.geojson`,
+      data: `./data/geojson/${borough.name}.geojson`,
     });
 
     // Add a layer for each borough
@@ -238,7 +234,7 @@ map.on("load", function () {
         },
         "circle-pitch-alignment": "map",
         "circle-color": "rgba(255,255,255,0)",
-        "circle-stroke-color": borough.color,
+        "circle-stroke-color": 'rgba(50,200,75,1)',
         // "circle-stroke-color": [
         //   "interpolate",
         //   ["linear"],
@@ -280,7 +276,16 @@ map.on("load", function () {
           type: PointCloudLayer,
           data: pointCloudFile,
           getPosition: (d) => [d[1], d[0], d[2]],
-          getColor: (d) => borough.color,
+          getColor: (d) => (d) =>
+            pointColor(
+              [d[1], d[0], d[2]],
+              hulls,
+              tanAmp,
+              sinAmp,
+              cosAz,
+              treeColor,
+              treeID
+            ),
           sizeUnits: "feet",
           pointSize: 3,
           opacity: 0.8,
@@ -671,11 +676,11 @@ map.on("load", function () {
     console.log(`offset:${offset}`);
     date.setTime(date.getTime() + hour * 60 * 60 * 1000 + offset * 60 * 1000);
     console.log(`date + hour:${date}`);
-    // let dateString = date.toString().split(" ");
-    // day = `${dateString[1]} ${dateString[2]}`;
-    // hour = `${dateString[4].split(":")[0]}:00 EST`;
-    // document.getElementById("day").innerHTML = day;
-    // document.getElementById("hour").innerHTML = hour;
+    let dateString = date.toString().split(" ");
+    day = `${dateString[1]} ${dateString[2]}`;
+    hour = `${dateString[4].split(":")[0]}:00 EST`;
+    document.getElementById("day").innerHTML = day;
+    document.getElementById("hour").innerHTML = hour;
   }
 
   map.on("click", "buildingfootprints", function (e) {
