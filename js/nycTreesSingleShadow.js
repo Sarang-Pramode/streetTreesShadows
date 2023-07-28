@@ -371,7 +371,7 @@ map.on("load", function () {
           <p><strong>Address:</strong> ${address}</p>
           <p><strong>Status:</strong> ${status}</p>
           <p><strong>Health:</strong> ${health}</p>
-          <p><strong>Truck Diameter:</strong> ${truckDiameter}</p>
+          <p><strong>Trunk Diameter:</strong> ${truckDiameter}</p>
           <p><strong>Canopy Radius:</strong> ${canopyRadius}</p>
           <p><strong>Height:</strong> ${height}</p>
           <p><strong>Density:</strong> ${density}</p>
