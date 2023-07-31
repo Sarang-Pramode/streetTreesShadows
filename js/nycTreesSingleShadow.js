@@ -295,16 +295,15 @@ map.on("load", function () {
 
       let day = parseFloat(document.getElementById("dayslider").value);
       let hour = parseFloat(document.getElementById("hourslider").value);
-      console.log(`day:${day}, hour:${hour}`);
+
+      let wholeHour = Math.floor(hour);
+      let fractionalHour = hour - wholeHour;
+      let minute = Math.round(fractionalHour * 60);
 
       date = new Date("2022-01-01 00:00");
-      console.log(`date:${date}`);
       date.setDate(date.getDate() + day);
-      console.log(`day + date:${date}`);
       var offset = date.getTimezoneOffset();
-      console.log(`offset:${offset}`);
-      date.setTime(date.getTime() + hour * 60 * 60 * 1000 + offset * 60 * 1000);
-      console.log(`date + hour:${date}`);
+      date.setTime(date.getTime() + wholeHour * 60 * 60 * 1000 + minute * 60 * 1000 + offset * 60 * 1000);
 
       // updateUI(e);
       selectedTreeIds.push(treeID);
@@ -619,10 +618,14 @@ map.on("load", function () {
     let day = parseFloat(document.getElementById("dayslider").value);
     let hour = parseFloat(document.getElementById("hourslider").value);
 
+    let wholeHour = Math.floor(hour);
+    let fractionalHour = hour - wholeHour;
+    let minute = Math.round(fractionalHour * 60);
+
     date = new Date("2022-01-01 00:00");
     date.setDate(date.getDate() + day);
     var offset = date.getTimezoneOffset();
-    date.setTime(date.getTime() + hour * 60 * 60 * 1000 + offset * 60 * 1000);
+    date.setTime(date.getTime() + wholeHour * 60 * 60 * 1000 + minute * 60 * 1000 + offset * 60 * 1000);
 
     // updateUI(e);
     selectedTreeIds.push(treeID);
@@ -659,26 +662,23 @@ map.on("load", function () {
     document.getElementById("density").innerHTML =
       e.features[0].properties["density"];
   }
+
   function updateDayHourBar() {
     let day = parseFloat(document.getElementById("dayslider").value);
     let hour = parseFloat(document.getElementById("hourslider").value);
     console.log(`day:${day}, hour:${hour}`);
-    // date = new Date("2022-01-01 00:00");
-    // date.setDate(date.getDate() + day);
-    // var offset = date.getTimezoneOffset();
-    // date.setTime(date.getTime() + hour * 60 * 60 * 1000 + offset * 60 * 1000);
+
+    let wholeHour = Math.floor(hour);
+    let fractionalHour = hour - wholeHour;
+    let minute = Math.round(fractionalHour * 60);
 
     date = new Date("2022-01-01 00:00");
-    console.log(`date:${date}`);
     date.setDate(date.getDate() + day);
-    console.log(`day + date:${date}`);
     var offset = date.getTimezoneOffset();
-    console.log(`offset:${offset}`);
-    date.setTime(date.getTime() + hour * 60 * 60 * 1000 + offset * 60 * 1000);
-    console.log(`date + hour:${date}`);
+    date.setTime(date.getTime() + wholeHour * 60 * 60 * 1000 + minute * 60 * 1000 + offset * 60 * 1000);
     let dateString = date.toString().split(" ");
     day = `${dateString[1]} ${dateString[2]}`;
-    hour = `${dateString[4].split(":")[0]}:00 EST`;
+    hour = `${dateString[4].split(":")[0]}:${("0" + dateString[4].split(":")[1]).slice(-2)} EST`;
     document.getElementById("day").innerHTML = day;
     document.getElementById("hour").innerHTML = hour;
   }
@@ -710,6 +710,61 @@ map.on("load", function () {
     buildingShadowUpdate(buildings);
   });
 
+  // time increment buttons
+  var dayIncrementButton = document.getElementById("day-increment");
+  var hourIncrementButton = document.getElementById("hour-increment");
+
+  dayIncrementButton.addEventListener("click", incrementDay);
+  hourIncrementButton.addEventListener("click", incrementHour);
+
+  function incrementDay() {
+
+    var slider = document.getElementById("dayslider");
+    slider.value = Math.min(parseInt(slider.value) + 1, slider.max);// increase the value by 1, ensuring it doesn't exceed its maximum
+    updateDayHourBar();
+    shadow(date, (e) => {
+      // console.log("shadow: stretch days bar");
+    });
+  }
+
+  function incrementHour() {
+
+    var slider = document.getElementById("hourslider");
+    slider.value = Math.min(parseFloat(slider.value) + 1.0, slider.max);// increase the value by 1, ensuring it doesn't exceed its maximum
+    updateDayHourBar();
+    shadow(date, (e) => {
+      // console.log("shadow: stretch days bar");
+    });
+  }
+
+  // time decrement buttons
+  var dayDecrementButton = document.getElementById("day-decrement");
+  var hourDecrementButton = document.getElementById("hour-decrement");
+
+  dayDecrementButton.addEventListener("click", decrementDay);
+  hourDecrementButton.addEventListener("click", decrementHour);
+
+  function decrementDay() {
+
+    var slider = document.getElementById("dayslider");
+    slider.value = Math.max(parseInt(slider.value) - 1, slider.min);// decrease the value by 1, ensuring it doesn't go below its minimum
+    updateDayHourBar();
+    shadow(date, (e) => {
+      // console.log("shadow: stretch days bar");
+    });
+  }
+
+  function decrementHour() {
+
+    var slider = document.getElementById("hourslider");
+    slider.value = Math.max(parseFloat(slider.value) - 1.0, slider.min);// decrease the value by 1, ensuring it doesn't go below its minimum
+    updateDayHourBar();
+    shadow(date, (e) => {
+      // console.log("shadow: stretch days bar");
+    });
+  }
+
+
   document.getElementById("dayslider").addEventListener("input", function (h) {
     updateDayHourBar();
     // date = new Date("2022-03-22 02:01:12");
@@ -727,6 +782,7 @@ map.on("load", function () {
       // console.log("shadow: stretch hours bar");
     });
   });
+
 });
 
 // shadow update utils
