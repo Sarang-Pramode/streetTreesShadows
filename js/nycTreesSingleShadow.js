@@ -287,6 +287,13 @@ map.on("load", function () {
         showModalMessage();
         return;
       }
+      // Increment the loaded trees count
+      loadedTreesCount++;
+
+      console.log(
+        "loadedTreesCount : ",
+        loadedTreesCount
+      );
 
       var treeID = e.features[0].properties["tree_id"];
 
@@ -324,8 +331,6 @@ map.on("load", function () {
         })
       );
 
-      // Increment the loaded trees count
-      loadedTreesCount++;
 
       let day = parseFloat(document.getElementById("dayslider").value);
       let hour = parseFloat(document.getElementById("hourslider").value);
