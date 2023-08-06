@@ -41,12 +41,35 @@ var buildingFilter = ["in", "bin"];
 var treeColor = "color";
 var shadowColor = "color";
 
+// Initialize a variable to count the number of loaded trees
+var loadedTreesCount = 0;
+var maxTreesThreshold = 50; // Set the threshold to 50 trees
+
 var boroughBoundaries;
 fetch("./data/building_foot_prints/borough_boundaries.geojson")
   .then((response) => response.json())
   .then((data) => {
     boroughBoundaries = data;
   });
+
+// Function to show the modal message
+function showModalMessage() {
+  var modal = document.getElementById("myModal");
+  modal.style.display = "block";
+
+  // Close the modal when the user clicks on the close button (x)
+  var closeBtn = document.getElementsByClassName("close")[0];
+  closeBtn.onclick = function () {
+    modal.style.display = "none";
+  };
+
+  // Close the modal when the user clicks anywhere outside the modal
+  window.onclick = function (event) {
+    if (event.target == modal) {
+      modal.style.display = "none";
+    }
+  };
+}
 
 const loadBuildingData = (borough) => {
 
@@ -257,6 +280,14 @@ map.on("load", function () {
     });
 
     map.on("click", `${borough.name}Trees`, function (e) {
+
+      // Check if the maximum threshold has been reached
+      if (loadedTreesCount >= maxTreesThreshold) {
+        console.log("Maximum tree threshold reached. Cannot load more trees.");
+        showModalMessage();
+        return;
+      }
+
       var treeID = e.features[0].properties["tree_id"];
 
       lat = e.features[0].properties["Latitude"];
@@ -292,6 +323,9 @@ map.on("load", function () {
           visible: true,
         })
       );
+
+      // Increment the loaded trees count
+      loadedTreesCount++;
 
       let day = parseFloat(document.getElementById("dayslider").value);
       let hour = parseFloat(document.getElementById("hourslider").value);
@@ -1196,6 +1230,9 @@ function pointColor(point, vs, tanAmp, sinAmp, cosAz, mode, tree_id) {
 }
 
 function htmlCountUpdate() {
+
+  let loadedTreesCount = 0; //added for modal and crashing issue
+
   let totalShaded = 0;
   let totalShading = 0;
   let totalOther = 0;
