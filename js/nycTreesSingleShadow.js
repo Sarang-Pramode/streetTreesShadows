@@ -43,7 +43,7 @@ var shadowColor = "color";
 
 // Initialize a variable to count the number of loaded trees
 var loadedTreesCount = 0;
-var maxTreesThreshold = 50; // Set the threshold to 50 trees
+var maxTreesThreshold = 20; // Set the threshold to 20 trees
 
 var boroughBoundaries;
 fetch("./data/building_foot_prints/borough_boundaries.geojson")
@@ -1231,7 +1231,7 @@ function pointColor(point, vs, tanAmp, sinAmp, cosAz, mode, tree_id) {
 
 function htmlCountUpdate() {
 
-  let loadedTreesCount = 0; //added for modal and crashing issue
+  loadedTreesCount = 0; //added for modal and crashing issue
 
   let totalShaded = 0;
   let totalShading = 0;
