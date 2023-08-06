@@ -43,7 +43,7 @@ var shadowColor = "color";
 
 // Initialize a variable to count the number of loaded trees
 var loadedTreesCount = 0;
-var maxTreesThreshold = 5; // Set the threshold to 5 trees
+var maxTreesThreshold = 50; // Set the threshold to 50 trees
 
 var boroughBoundaries;
 fetch("./data/building_foot_prints/borough_boundaries.geojson")
@@ -290,10 +290,10 @@ map.on("load", function () {
       // Increment the loaded trees count
       loadedTreesCount++;
 
-      console.log(
-        "loadedTreesCount : ",
-        loadedTreesCount
-      );
+      // console.log(
+      //   "loadedTreesCount : ",
+      //   loadedTreesCount
+      // );
 
       var treeID = e.features[0].properties["tree_id"];
 
