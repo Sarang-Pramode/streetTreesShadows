@@ -43,7 +43,7 @@ var shadowColor = "color";
 
 // Initialize a variable to count the number of loaded trees
 var loadedTreesCount = 0;
-var maxTreesThreshold = 20; // Set the threshold to 20 trees
+var maxTreesThreshold = 5; // Set the threshold to 5 trees
 
 var boroughBoundaries;
 fetch("./data/building_foot_prints/borough_boundaries.geojson")
