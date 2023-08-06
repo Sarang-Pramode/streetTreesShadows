@@ -39,8 +39,8 @@
   <div id="myModal" class="modal">
     <div class="modal-content">
       <span class="close">&times;</span>
-      <p>Maximum tree threshold (50 trees) has been reached. Cannot load more trees.</p>
-      <p>Please refresh the page using the menu</p>
+      <p style="text-align:center">Maximum tree threshold has been reached. Cannot load more trees.</p>
+      <p style="text-align:center">Please refresh the page using the menu</p>
     </div>
   </div>
 
@@ -58,21 +58,23 @@
     }
 
     .modal-content {
-      background-color: #fefefe;
+      background-color: #f2f2f2;
       margin: 15% auto;
       padding: 20px;
       border: 1px solid #ccc;
       border-radius: 5px;
       width: 80%;
       max-width: 400px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
 
     .close {
-      color: #aaa;
+      color: #888;
       float: right;
-      font-size: 28px;
+      font-size: 24px;
       font-weight: bold;
       cursor: pointer;
+      transition: color 0.2s;
     }
 
     .close:hover,
@@ -84,12 +86,13 @@
     /* Style the text inside the modal */
     .modal-content p {
       margin: 10px 0;
+      color: #444;
     }
 
     /* Style the modal close button (x) */
     .close {
       position: absolute;
-      top: 0;
+      top: 10px;
       right: 10px;
     }
 
