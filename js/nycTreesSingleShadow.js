@@ -1236,8 +1236,6 @@ function pointColor(point, vs, tanAmp, sinAmp, cosAz, mode, tree_id) {
 
 function htmlCountUpdate() {
 
-  loadedTreesCount = 0; //added for modal and crashing issue
-
   let totalShaded = 0;
   let totalShading = 0;
   let totalOther = 0;
@@ -1298,6 +1296,7 @@ function onRefresh() {
     }
   }
   selectedTreeIds = [];
+  loadedTreesCount = 0; // refresh count for modal display
 
   // remove all buildings and building shadows
   for (var building of selectedBuildings) {
