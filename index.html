@@ -24,6 +24,44 @@
       bottom: 0;
       width: 100%;
     }
+    
+    .map-overlay {
+      font-family: Arial, sans-serif;
+    }
+
+    .control-wrapper {
+      display: flex;
+      align-items: center;
+      padding: 15px 0;
+      width: 100%;
+    }
+
+    .control-name {
+      flex: 1;
+      display: flex;
+      align-items: center;
+    }
+
+    .slider-wrapper {
+      flex: 5;
+      display: flex;
+      align-items: center;
+      font-size: 1.4em;
+    }
+
+    .slider {
+      flex: 1;
+      margin: 0 5%;
+    }
+
+    .button-wrapper {
+      display: flex;
+      align-items: center;
+    }
+
+    .button-wrapper button {
+      margin: 0 5px;
+    }
   </style>
 </head>
 
@@ -80,25 +118,32 @@
   </div>
 
   <div class="map-overlay">
-    <div style="float: left; padding: 15px 0; width: 100%">
-      <p class="control-name">
-        Day of the Year :
-        <span id="day">Mar 21</span>
-        <input id="dayslider" type="range" class="slider" min="1" max="365" step="1" value="79"
-          style="width: 80%; margin-left: 10%" />
+    <div class="control-wrapper">
+      <p class="control-name">Day of the Year :</p>
+      <div class="slider-wrapper">
+        <span id="day">Jun 21</span>
+        <input id="dayslider" type="range" class="slider" min="1" max="365" step="1" value="171" />
+      </div>
+      <div class="button-wrapper">
         <button id="day-decrement">&lt;</button>
+      </div>
+      <div class="button-wrapper">
         <button id="day-increment">&gt;</button>
-      </p>
+      </div>
     </div>
-    <div>
-      <p class="control-name">
-        Hour :
-        <span id="hour">16:00 EST</span>
-        <input id="hourslider" type="range" class="slider" min="7.52" max="17.07" step="0.05" value="12"
-          style="width: 52%; margin-left: 25%" />
+
+    <div class="control-wrapper">
+      <p class="control-name">Hour :</p>
+      <div class="slider-wrapper">
+        <span id="hour">12:00 EST</span>
+        <input id="hourslider" type="range" class="slider" min="1.7000000000000002" max="15.8" step="0.05" value="8" />
+      </div>
+      <div class="button-wrapper">
         <button id="hour-decrement">&lt;</button>
+      </div>
+      <div class="button-wrapper">
         <button id="hour-increment">&gt;</button>
-      </p>
+      </div>
     </div>
 
     <!-- <table style="width: 100%">

@@ -115,6 +115,91 @@ const freeBuildingData = () => {
   selectedBins = [];
 };
 
+const boroughMapToTree = {
+  "SI": "staten",
+  "MN": "manhattan",
+  "BK": "brooklyn",
+  "QN": "queens",
+  "BX": "bronx"
+};
+
+function loadTreeData(boroughCode) {
+  const treeBoroughName = boroughMapToTree[boroughCode];
+  if (treeBoroughName) {
+    map.addSource("treesData", {
+      type: "geojson",
+      data: `./data/treeGeoJson/${treeBoroughName}.geojson`,
+    });
+
+    // Add a layer for each borough
+    map.addLayer({
+      id: "TreesCircle",
+      type: "circle",
+      minzoom: 15,
+      source: "treesData",
+      layout: { visibility: "visible" },
+      paint: {
+        // make circles larger as the user zooms from z12 to z22
+        "circle-radius": {
+          base: 1,
+          stops: [
+            [15, 1.5],
+            [17, 3],
+            [22, 24],
+          ],
+        },
+        "circle-pitch-alignment": "map",
+        "circle-color": "rgba(255,255,255,0)",
+        "circle-stroke-color": 'rgba(50,200,75,1)',
+        // "circle-stroke-color": [
+        //   "interpolate",
+        //   ["linear"],
+        //   ["get", "zrange"],
+        //   0,
+        //   "rgba(200,100,50,0.8)",
+        //   65,
+        //   "rgba(50,200,75,1)",
+        // ],
+        "circle-stroke-width": {
+          base: 1,
+          stops: [
+            [15, 0.7],
+            [17, 1],
+            [22, 5],
+          ],
+        },
+        "circle-opacity": 1,
+      },
+    });
+
+
+    console.log(`Loaded tree data for ${treeBoroughName}`);
+  } else {
+    console.error(`Tree data not found for borough code: ${boroughCode}`);
+  }
+}
+
+function freeTreeData() {
+  // If the layer exists, remove event listeners specific to it
+  // if (map.getLayer("TreesCircle")) {
+  //   map.off("click", "TreesCircle");
+  //   map.off("mouseenter", "TreesCircle");
+  //   map.off("mouseleave", "TreesCircle");
+  // }
+
+  // If the layer exists, remove it
+  if (map.getLayer("TreesCircle")) {
+    map.removeLayer("TreesCircle");
+  }
+
+  // If the source exists, remove it
+  if (map.getSource("treesData")) {
+    map.removeSource("treesData");
+  }
+
+  console.log("freeTreeData has been executed");
+}
+
 // const boroughs = ['bronx', 'brooklyn', 'manhattan', 'queens', 'staten'];
 const boroughs = [
   { name: 'bronx', color: 'rgba(200,100,50,0.8)' },
@@ -126,6 +211,7 @@ const boroughs = [
 
 map.on("load", function () {
   updateDayHourBar();
+  stretchHoursBar();
   map.removeLayer("building");
 
   map.addSource("trees", {
@@ -209,205 +295,14 @@ map.on("load", function () {
   //   },
   // });
 
-  boroughs.forEach((borough) => {
-    map.addSource(borough.name, {
-      type: "geojson",
-      data: `./data/treeGeoJson/${borough.name}.geojson`,
-    });
-
-    // Add a layer for each borough
-    map.addLayer({
-      id: `${borough.name}Trees`,
-      type: "circle",
-      minzoom: 15,
-      source: borough.name,
-      layout: { visibility: "visible" },
-      paint: {
-        // make circles larger as the user zooms from z12 to z22
-        "circle-radius": {
-          base: 1,
-          stops: [
-            [15, 1.5],
-            [17, 3],
-            [22, 24],
-          ],
-        },
-        "circle-pitch-alignment": "map",
-        "circle-color": "rgba(255,255,255,0)",
-        "circle-stroke-color": 'rgba(50,200,75,1)',
-        // "circle-stroke-color": [
-        //   "interpolate",
-        //   ["linear"],
-        //   ["get", "zrange"],
-        //   0,
-        //   "rgba(200,100,50,0.8)",
-        //   65,
-        //   "rgba(50,200,75,1)",
-        // ],
-        "circle-stroke-width": {
-          base: 1,
-          stops: [
-            [15, 0.7],
-            [17, 1],
-            [22, 5],
-          ],
-        },
-        "circle-opacity": 1,
-      },
-    });
-
-    map.on("click", `${borough.name}Trees`, function (e) {
-      var treeID = e.features[0].properties["tree_id"];
-
-      lat = e.features[0].properties["Latitude"];
-      lon = e.features[0].properties["longitude"];
-
-      var pointCloudId = `tree${treeID}`;
-      var pointCloudFile = `https://s3.amazonaws.com/www.treefolio.org-2.0/data/treeJsonFiles/2021/${treeID}.json`;
-
-      console.log(`pCloudFilelink:${pointCloudFile}`)
-      if (map.getLayer(pointCloudId)) {
-        return;
-      }
-
-      map.addLayer(
-        new MapboxLayer({
-          id: pointCloudId,
-          type: PointCloudLayer,
-          data: pointCloudFile,
-          getPosition: (d) => [d[1], d[0], d[2]],
-          getColor: (d) => (d) =>
-            pointColor(
-              [d[1], d[0], d[2]],
-              hulls,
-              tanAmp,
-              sinAmp,
-              cosAz,
-              treeColor,
-              treeID
-            ),
-          sizeUnits: "feet",
-          pointSize: 3,
-          opacity: 0.8,
-          visible: true,
-        })
-      );
-
-      let day = parseFloat(document.getElementById("dayslider").value);
-      let hour = parseFloat(document.getElementById("hourslider").value);
-
-      let wholeHour = Math.floor(hour);
-      let fractionalHour = hour - wholeHour;
-      let minute = Math.round(fractionalHour * 60);
-
-      date = new Date("2022-01-01 00:00");
-      date.setDate(date.getDate() + day);
-      var offset = date.getTimezoneOffset();
-      date.setTime(date.getTime() + wholeHour * 60 * 60 * 1000 + minute * 60 * 1000 + offset * 60 * 1000);
-
-      // updateUI(e);
-      selectedTreeIds.push(treeID);
-      shadow(date, (e) => {
-        // console.log("shadow: plant new tree");
-      });
-      stretchHoursBar();
-    });
-
-    map.on("mouseenter", `${borough.name}Trees`, (e) => {
-      // Change the cursor style as a UI indicator.
-      map.getCanvas().style.cursor = "pointer";
-
-      // Copy coordinates array.
-      const coordinates = e.features[0].geometry.coordinates.slice();
-      const tree_id = e.features[0].properties.tree_id;
-      const spc_common = e.features[0].properties.spc_common;
-      const spc_latin = e.features[0].properties.spc_latin;
-      const address = e.features[0].properties.address;
-      const status = e.features[0].properties.status;
-      const health = e.features[0].properties.health;
-      const truckDiameter = e.features[0].properties.tree_dbh;
-      const canopyRadius = e.features[0].properties.canopy_radius_calc_ft;
-      const height = e.features[0].properties.zrange;
-      const density = e.features[0].properties.density;
-
-      if (shadedPoints[tree_id] == undefined) {
-        shadedPoints[tree_id] = [];
-      }
-      if (shadingPoints[tree_id] == undefined) {
-        shadingPoints[tree_id] = [];
-      }
-      if (otherPoints[tree_id] == undefined) {
-        otherPoints[tree_id] = [];
-      }
-      const totalPoint =
-        shadedPoints[tree_id].length +
-        shadingPoints[tree_id].length +
-        otherPoints[tree_id].length;
-      let shadedPointPercentage =
-        (shadedPoints[tree_id].length / totalPoint) * 100;
-      shadedPointPercentage = shadedPointPercentage.toFixed(2) + "%";
-      let shadingPointPercentage =
-        (shadingPoints[tree_id].length / totalPoint) * 100;
-      shadingPointPercentage = shadingPointPercentage.toFixed(2) + "%";
-      let otherPointPercentage = (otherPoints[tree_id].length / totalPoint) * 100;
-      otherPointPercentage = otherPointPercentage.toFixed(2) + "%";
-
-      // Ensure that if the map is zoomed out such that multiple
-      // copies of the feature are visible, the popup appears
-      // over the copy being pointed to.
-      while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-        coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
-      }
-
-      // Populate the popup and set its coordinates
-      // based on the feature found.
-      let description = `
-      <div class="popup-species">
-          <h3 class="spc_common">${spc_common}</h3>
-          <h5 class="spc_latin">${spc_latin}</h5>
-        </div>
-        <div class="popup-details">
-          <p><strong>Address:</strong> ${address}</p>
-          <p><strong>Status:</strong> ${status}</p>
-          <p><strong>Health:</strong> ${health}</p>
-          <p><strong>Truck Diameter:</strong> ${truckDiameter}</p>
-          <p><strong>Canopy Radius:</strong> ${canopyRadius}</p>
-          <p><strong>Height:</strong> ${height}</p>
-          <p><strong>Density:</strong> ${density}</p>
-          <p><strong>Shaded Percent:</strong> <span class="shaded-percent">${shadedPointPercentage}</span></p>
-          <p><strong>Shading Percent:</strong> <span class="shading-percent">${shadingPointPercentage}</span></p>
-          <p><strong>Other Percent:</strong> <span class="other-percent">${otherPointPercentage}</span></p>
-        </div>
-      `;
-      document.getElementById("board").style.display = "none";
-      popup.setLngLat(coordinates).setHTML(description).addTo(map);
-    });
-
-    map.on("mouseleave", `${borough.name}Trees`, () => {
-      map.getCanvas().style.cursor = "";
-      popup.remove();
-      document.getElementById("board").style.display = "block";
-    });
-
-    //
-
-    map.on("mouseenter", `${borough.name}Trees`, function (e) {
-      map.getCanvas().style.cursor = "pointer";
-    });
-    map.on("mouseleave", `${borough.name}Trees`, function () {
-      map.getCanvas().style.cursor = "";
-    });
-
-  });
-
   const popup = new mapboxgl.Popup({
     closeButton: false,
     closeOnClick: false,
   });
 
   // Set the target zoom levels
-  const targetZoomLevelIn = 13;
-  const targetZoomLevelOut = 11;
+  const targetZoomLevelIn = 15.1;
+  const targetZoomLevelOut = 15;
 
   // Flags to track if the target zoom levels have been reached
   let targetZoomInReached = false;
@@ -454,6 +349,7 @@ map.on("load", function () {
         currentBorough
       );
       loadBuildingData(boroughMap[currentBorough]);
+      loadTreeData(boroughMap[currentBorough]);
     } else {
       console.log(
         `Target zoom level in (${targetZoomLevelIn}) reached. Current viewing location:`,
@@ -467,6 +363,7 @@ map.on("load", function () {
   function onTargetZoomOutReached() {
     console.log(`Target zoom level out (${targetZoomLevelOut}) reached.`);
     freeBuildingData();
+    freeTreeData();
   }
 
   // Add a 'zoomend' event listener
@@ -574,6 +471,169 @@ map.on("load", function () {
   // map.on("mouseleave", "trees1", function () {
   //   map.getCanvas().style.cursor = "";
   // });
+
+  map.on("click", "TreesCircle", function (e) {
+    var treeID = e.features[0].properties["tree_id"];
+
+    lat = e.features[0].properties["Latitude"];
+    lon = e.features[0].properties["longitude"];
+
+    var pointCloudId = `tree${treeID}`;
+    var pointCloudFile = `https://s3.amazonaws.com/www.treefolio.org-2.0/data/treeJsonFiles/2021/${treeID}.json`;
+
+    console.log(`pCloudFilelink:${pointCloudFile}`)
+    if (map.getLayer(pointCloudId)) {
+      return;
+    }
+
+    map.addLayer(
+      new MapboxLayer({
+        id: pointCloudId,
+        type: PointCloudLayer,
+        data: pointCloudFile,
+        getPosition: (d) => [d[1], d[0], d[2]],
+        getColor: (d) => (d) =>
+          pointColor(
+            [d[1], d[0], d[2]],
+            hulls,
+            tanAmp,
+            sinAmp,
+            cosAz,
+            treeColor,
+            treeID
+          ),
+        sizeUnits: "feet",
+        pointSize: 3,
+        opacity: 0.8,
+        visible: true,
+      })
+    );
+
+    // let day = parseFloat(document.getElementById("dayslider").value);
+    // let hour = parseFloat(document.getElementById("hourslider").value);
+    // console.log(`day:${day}, hour:${hour}`);
+
+    // date = new Date("2022-01-01 00:00");
+    // console.log(`date:${date}`);
+    // date.setDate(date.getDate() + day);
+    // console.log(`day + date:${date}`);
+    // var offset = date.getTimezoneOffset();
+    // console.log(`offset:${offset}`);
+    // date.setTime(date.getTime() + hour * 60 * 60 * 1000 + offset * 60 * 1000);
+    // console.log(`date + hour:${date}`);
+    let day = parseFloat(document.getElementById("dayslider").value);
+    let hour = parseFloat(document.getElementById("hourslider").value);
+
+    let wholeHour = Math.floor(hour);
+    let fractionalHour = hour - wholeHour;
+    let minute = Math.round(fractionalHour * 60);
+
+    date = new Date("2022-01-01 00:00");
+    date.setDate(date.getDate() + day);
+    var offset = date.getTimezoneOffset();
+    date.setTime(date.getTime() + wholeHour * 60 * 60 * 1000 + minute * 60 * 1000 + offset * 60 * 1000);
+
+    // updateUI(e);
+    selectedTreeIds.push(treeID);
+    shadow(date, (e) => {
+      // console.log("shadow: plant new tree");
+    });
+    stretchHoursBar();
+  });
+
+  map.on("mouseenter", "TreesCircle", (e) => {
+    // Change the cursor style as a UI indicator.
+    map.getCanvas().style.cursor = "pointer";
+
+    // Copy coordinates array.
+    const coordinates = e.features[0].geometry.coordinates.slice();
+    const tree_id = e.features[0].properties.tree_id;
+    const spc_common = e.features[0].properties.spc_common;
+    const spc_latin = e.features[0].properties.spc_latin;
+    const address = e.features[0].properties.address;
+    const status = e.features[0].properties.status;
+    const health = e.features[0].properties.health;
+    const truckDiameter = e.features[0].properties.tree_dbh;
+    const canopyRadius = e.features[0].properties.canopy_radius_calc_ft;
+    const height = e.features[0].properties.zrange;
+    const density = e.features[0].properties.density;
+
+    if (shadedPoints[tree_id] == undefined) {
+      shadedPoints[tree_id] = [];
+    }
+    if (shadingPoints[tree_id] == undefined) {
+      shadingPoints[tree_id] = [];
+    }
+    if (otherPoints[tree_id] == undefined) {
+      otherPoints[tree_id] = [];
+    }
+    const totalPoint =
+      shadedPoints[tree_id].length +
+      shadingPoints[tree_id].length +
+      otherPoints[tree_id].length;
+
+    let shadedPointPercentage, shadingPointPercentage, otherPointPercentage;
+
+    if (totalPoint == 0) {
+      shadedPointPercentage = "---%";
+      shadingPointPercentage = "---%";
+      otherPointPercentage = "---%";
+    } else {
+      shadedPointPercentage = (shadedPoints[tree_id].length / totalPoint) * 100;
+      shadedPointPercentage = shadedPointPercentage.toFixed(2) + "%";
+      shadingPointPercentage = (shadingPoints[tree_id].length / totalPoint) * 100;
+      shadingPointPercentage = shadingPointPercentage.toFixed(2) + "%";
+      otherPointPercentage = (otherPoints[tree_id].length / totalPoint) * 100;
+      otherPointPercentage = otherPointPercentage.toFixed(2) + "%";
+    }
+
+
+    // Ensure that if the map is zoomed out such that multiple
+    // copies of the feature are visible, the popup appears
+    // over the copy being pointed to.
+    while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+      coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+    }
+
+    // Populate the popup and set its coordinates
+    // based on the feature found.
+    let description = `
+    <div class="popup-species">
+        <h3 class="spc_common">${spc_common}</h3>
+        <h5 class="spc_latin">${spc_latin}</h5>
+      </div>
+      <div class="popup-details">
+        <p><strong>Address:</strong> ${address}</p>
+        <p><strong>Status:</strong> ${status}</p>
+        <p><strong>Health:</strong> ${health}</p>
+        <p><strong>Truck Diameter:</strong> ${truckDiameter}</p>
+        <p><strong>Canopy Radius:</strong> ${canopyRadius}</p>
+        <p><strong>Height:</strong> ${height}</p>
+        <p><strong>Density:</strong> ${density}</p>
+        <p><strong>Canopy Shading Ground:</strong> <span class="other-percent">${otherPointPercentage}</span></p>
+        <p><strong>Canopy Shading Buildings:</strong> <span class="shading-percent">${shadingPointPercentage}</span></p>
+        <p><strong>Canopy In Shade:</strong> <span class="shaded-percent">${shadedPointPercentage}</span></p>
+      </div>
+    `;
+    document.getElementById("board").style.display = "none";
+    popup.setLngLat(coordinates).setHTML(description).addTo(map);
+  });
+
+  map.on("mouseleave", "TreesCircle", () => {
+    map.getCanvas().style.cursor = "";
+    popup.remove();
+    document.getElementById("board").style.display = "block";
+  });
+
+  //
+
+  map.on("mouseenter", "TreesCircle", function (e) {
+    map.getCanvas().style.cursor = "pointer";
+  });
+  map.on("mouseleave", "TreesCircle", function () {
+    map.getCanvas().style.cursor = "";
+  });
+
   map.on("mouseenter", "buildingfootprints", function (e) {
     map.getCanvas().style.cursor = "pointer";
   });
@@ -710,6 +770,18 @@ map.on("load", function () {
     buildingShadowUpdate(buildings);
   });
 
+  var monthDays = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+  function getCurrentMonth(dayOfYear) {
+    let totalDays = 0;
+    for (let i = 0; i < monthDays.length; i++) {
+      if (dayOfYear <= (totalDays + monthDays[i])) {
+        return i; // Return the 0-indexed month (0 for January, 11 for December).
+      }
+      totalDays += monthDays[i];
+    }
+  }
+
   // time increment buttons
   var dayIncrementButton = document.getElementById("day-increment");
   var hourIncrementButton = document.getElementById("hour-increment");
@@ -720,7 +792,12 @@ map.on("load", function () {
   function incrementDay() {
 
     var slider = document.getElementById("dayslider");
-    slider.value = Math.min(parseInt(slider.value) + 1, slider.max);// increase the value by 1, ensuring it doesn't exceed its maximum
+    var currentMonth = getCurrentMonth(parseInt(slider.value));
+    var daysToAdd = monthDays[currentMonth];
+
+    slider.value = Math.min(parseInt(slider.value) + daysToAdd, slider.max);
+    // slider.value = Math.min(parseInt(slider.value) + 1, slider.max);// increase the value by 1, ensuring it doesn't exceed its maximum
+
     updateDayHourBar();
     shadow(date, (e) => {
       // console.log("shadow: stretch days bar");
@@ -747,7 +824,11 @@ map.on("load", function () {
   function decrementDay() {
 
     var slider = document.getElementById("dayslider");
-    slider.value = Math.max(parseInt(slider.value) - 1, slider.min);// decrease the value by 1, ensuring it doesn't go below its minimum
+    var currentMonth = getCurrentMonth(parseInt(slider.value));
+    var daysToSubtract = currentMonth > 0 ? monthDays[currentMonth - 1] : 0;
+
+    slider.value = Math.max(parseInt(slider.value) - daysToSubtract, slider.min);
+    // slider.value = Math.max(parseInt(slider.value) - 1, slider.min);// decrease the value by 1, ensuring it doesn't go below its minimum
     updateDayHourBar();
     shadow(date, (e) => {
       // console.log("shadow: stretch days bar");
@@ -1208,21 +1289,24 @@ function htmlCountUpdate() {
   for (const tree in otherPoints) {
     totalOther += otherPoints[tree].length;
   }
+
+
   let totalPoint = totalShaded + totalShading + totalOther;
-  let totalShadedPercent = (totalShaded / totalPoint) * 100;
-  let totalShadingPercent = (totalShading / totalPoint) * 100;
-  let totalOtherPercent = (totalOther / totalPoint) * 100;
-  document.getElementById("numOfTrees").innerHTML =
-    selectedTreeIds.length.toString();
-  document.getElementById(
-    "shadedTree"
-  ).innerHTML = `${totalShadedPercent.toFixed(2)}%`;
-  document.getElementById(
-    "shadingTree"
-  ).innerHTML = `${totalShadingPercent.toFixed(2)}%`;
-  document.getElementById("otherTree").innerHTML = `${totalOtherPercent.toFixed(
-    2
-  )}%`;
+  let totalShadedPercent = "---%";
+  let totalShadingPercent = "---%";
+  let totalOtherPercent = "---%";
+
+  // Only perform calculations if totalPoint is not zero
+  if (totalPoint !== 0) {
+    totalShadedPercent = ((totalShaded / totalPoint) * 100).toFixed(2) + "%";
+    totalShadingPercent = ((totalShading / totalPoint) * 100).toFixed(2) + "%";
+    totalOtherPercent = ((totalOther / totalPoint) * 100).toFixed(2) + "%";
+  }
+
+  document.getElementById("numOfTrees").innerHTML = selectedTreeIds.length.toString();
+  document.getElementById("shadedTree").innerHTML = totalShadedPercent;
+  document.getElementById("shadingTree").innerHTML = totalShadingPercent;
+  document.getElementById("otherTree").innerHTML = totalOtherPercent;
 }
 
 function refreshUIContent() {
