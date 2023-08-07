@@ -675,7 +675,8 @@ map.on("load", function () {
 
     loadedTreesCount++;
 
-    console.log(" loadedTreesCount : ",loadedTreesCount)
+    console.log(Tree Count);
+    console.log(loadedTreesCount);
     
     var treeID = e.features[0].properties["tree_id"];
 
@@ -1377,6 +1378,7 @@ function onRefresh() {
   }
   selectedTreeIds = [];
   loadedTreesCount = 0; // refresh count for modal display
+  console.log("loadedTreesCount variable cleared");
 
   // remove all buildings and building shadows
   for (var building of selectedBuildings) {
