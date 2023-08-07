@@ -453,6 +453,15 @@ tr {
   border-radius: 30px;
 }
 
+#message {
+  top: 35%; /* Adjust the vertical position as needed */
+}
+
+/* Apply the same styling to the smaller message */
+#message p {
+  margin: 0;
+}
+
 /* Modal styles */
 .modal {
   display: none;
