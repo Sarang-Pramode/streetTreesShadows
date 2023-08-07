@@ -675,7 +675,7 @@ map.on("load", function () {
 
     loadedTreesCount++;
 
-    console.log(Tree Count);
+    console.log("Tree Count");
     console.log(loadedTreesCount);
     
     var treeID = e.features[0].properties["tree_id"];
