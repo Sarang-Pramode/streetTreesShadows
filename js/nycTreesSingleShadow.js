@@ -41,12 +41,35 @@ var buildingFilter = ["in", "bin"];
 var treeColor = "color";
 var shadowColor = "color";
 
+// Initialize a variable to count the number of loaded trees
+var loadedTreesCount = 0;
+var maxTreesThreshold = 50; // Set the threshold to 50 trees
+
 var boroughBoundaries;
 fetch("./data/building_foot_prints/borough_boundaries.geojson")
   .then((response) => response.json())
   .then((data) => {
     boroughBoundaries = data;
   });
+
+// Function to show the modal message
+function showModalMessage() {
+  var modal = document.getElementById("myModal");
+  modal.style.display = "block";
+
+  // Close the modal when the user clicks on the close button (x)
+  var closeBtn = document.getElementsByClassName("close")[0];
+  closeBtn.onclick = function () {
+    modal.style.display = "none";
+  };
+
+  // Close the modal when the user clicks anywhere outside the modal
+  window.onclick = function (event) {
+    if (event.target == modal) {
+      modal.style.display = "none";
+    }
+  };
+}
 
 const loadBuildingData = (borough) => {
 
@@ -1277,6 +1300,7 @@ function pointColor(point, vs, tanAmp, sinAmp, cosAz, mode, tree_id) {
 }
 
 function htmlCountUpdate() {
+
   let totalShaded = 0;
   let totalShading = 0;
   let totalOther = 0;
@@ -1340,6 +1364,7 @@ function onRefresh() {
     }
   }
   selectedTreeIds = [];
+  loadedTreesCount = 0; // refresh count for modal display
 
   // remove all buildings and building shadows
   for (var building of selectedBuildings) {
