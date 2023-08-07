@@ -665,6 +665,18 @@ map.on("load", function () {
   });
 
   map.on("click", "trees1", function (e) {
+
+    // Check if the maximum threshold has been reached
+      if (loadedTreesCount >= maxTreesThreshold) {
+        console.log("Maximum tree threshold reached. Cannot load more trees.");
+        showModalMessage();
+        return;
+      }
+
+    loadedTreesCount++;
+
+    console.log(" loadedTreesCount : ",loadedTreesCount)
+    
     var treeID = e.features[0].properties["tree_id"];
 
     lat = e.features[0].properties["Latitude"];
