@@ -453,6 +453,19 @@ tr {
   border-radius: 30px;
 }
 
+.dashboard2 {
+  top: 50%;
+  left: 5%;
+  position: absolute;
+  color: black;
+  font: 12px/12px "Helvetica Neue", Arial, Helvetica, sans-serif;
+  padding: 10px;
+  width: 250px;
+  background-color: rgba(230, 230, 230, 0.8);
+  border: solid #c0c0c0;
+  border-radius: 30px;
+}
+
 .message-container {
   position: absolute;
   top: 50%; /* Adjust the vertical position as needed */
