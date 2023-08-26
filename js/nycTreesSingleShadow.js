@@ -696,6 +696,19 @@ map.on("load", function () {
     map.getCanvas().style.cursor = "";
   });
 
+  //welcome page
+  const mapBackgroundOverlay = document.getElementById('mapBackgroundOverlay');
+
+  // Grab the overlay and close button by their respective IDs
+  const welcomeOverlay = document.getElementById('welcomeOverlay');
+  const closeWelcomeOverlay = document.getElementById('closeWelcomeOverlay');
+
+  // Add an event listener to the close button to hide the welcome overlay when clicked
+  closeWelcomeOverlay.addEventListener('click', function() {
+      welcomeOverlay.style.display = 'none';
+      mapBackgroundOverlay.style.display = 'none';
+  });
+
   map.on("click", "trees1", function (e) {
     
     var treeID = e.features[0].properties["tree_id"];
